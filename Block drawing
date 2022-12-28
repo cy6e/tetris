@@ -1,0 +1,18 @@
+import random
+
+# Function to choose a random shape for the block
+def choose_shape():
+    return random.choice(shapes)
+
+# Function to draw the blocks on the screen
+def draw_blocks():
+    for y in range(grid_height):
+        for x in range(grid_width):
+            color = grid[y][x]
+            if color > 0:
+                draw_block(x, y, colors[color])
+    # Draw the current block
+    for y_offset, row in enumerate(current_shape):
+        for x_offset, block in enumerate(row):
+            if block > 0:
+                draw_block(x_pos + x_offset, y_pos + y_offset, colors[block])
