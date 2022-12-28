@@ -1,0 +1,21 @@
+# Set the initial grid
+grid = [[0 for x in range(grid_width)] for y in range(grid_height)]
+
+# Function to add a block to the grid
+def add_block_to_grid(x, y, shape):
+    for y_offset, row in enumerate(shape):
+        for x_offset, block in enumerate(row):
+            if block > 0:
+                grid[y + y_offset][x + x_offset] = block
+
+# Function to check for completed lines
+def check_lines():
+    global grid
+    lines_cleared = 0
+    for y in range(grid_height):
+        if all(grid[y]):
+            # Remove the line and move all the lines above it down
+            del grid[y]
+            grid.insert(0, [0 for x in range(grid_width)])
+            lines_cleared += 1
+    return lines_cleared
