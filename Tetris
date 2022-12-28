@@ -1,0 +1,256 @@
+from dis import Instruction  # Import the Instruction class from the dis module
+import pygame  # Import the Pygame library
+import random  # Import the random module
+
+colors = [  # List of colors for the game blocks
+    (0, 0, 0),  # Black color
+    (120, 37, 179),  # Purple color
+    (100, 179, 179),  # Light blue color
+    (80, 34, 22),  # Dark brown color
+    (80, 134, 22),  # Dark green color
+    (180, 34, 22),  # Red color
+    (180, 34, 122),  # Pink color
+]
+
+s_width = 200  # Width of the game screen
+s_height = 175  # Height of the game screen
+play_width = 75  # Width of the game field, in blocks
+play_height = 150  # Height of the game field, in blocks
+block_size = 30  # Size of each block, in pixels
+top_left_x = (s_width - play_width) // 2  # X coordinate of the top-left corner of the game field
+top_left_y = s_height - play_height  # Y coordinate of the top-left corner of the game field
+
+class Figure:  # Definition of the Figure class
+    x = 0  # X position of the figure, in blocks
+    y = 0  # Y position of the figure, in blocks
+
+    figures = [  # List of figures and their rotations
+        [[1, 5, 9, 13], [4, 5, 6, 7]],  # Figure 1
+        [[4, 5, 9, 10], [2, 6, 5, 9]],  # Figure 2
+        [[6, 7, 9, 10], [1, 5, 6, 10]],  # Figure 3
+        [[1, 2, 5, 9], [0, 4, 5, 6], [1, 5, 9, 8], [4, 5, 6, 10]],  # Figure 4
+        [[1, 2, 6, 10], [5, 6, 7, 9], [2, 6, 10, 11], [3, 5, 6, 7]],  # Figure 5
+        [[1, 4, 5, 6], [1, 4, 5, 9], [4, 5, 6, 9], [1, 5, 6, 9]],  # Figure 6
+        [[1, 2, 5, 6]],  # Figure 7
+    ]
+
+    def __init__(self, x, y):  # Constructor for the Figure class
+        self.x = x  # Initialize the x position of the figure
+        self.y = y  # Initialize the y position of the figure
+        self.type = random.randint(0, len(self.figures) - 1)  # Choose a random figure type
+        self.color = random.randint(1, len(colors) - 1)  # Choose a random color
+        self.rotation = 0  # Initialize the rotation of the figure
+
+       def image(self):  # Method that returns the image of the figure for its current rotation
+        return self.figures[self.type][self.rotation]
+
+    def rotate(self):  # Method that rotates the figure to the next rotation
+        self.rotation = (self.rotation + 1) % len(self.figures[self.type])
+
+class Tetris:  # Definition of the Tetris class
+    level = 2  # Initial game level
+    score = 0  # Initial score
+    state = "start"  # Initial state of the game
+    field = []  # List that represents the game field
+    height = 0  # Height of the game field, in blocks
+    width = 0  # Width of the game field, in blocks
+    x = 50  # X position of the top-left corner of the game field on the screen
+    y = 120  # Y position of the top-left corner of the game field on the screen
+    zoom = 15  # Zoom factor for the game field
+    figure = None  # Current falling figure
+
+    def __init__(self, height, width):  # Constructor for the Tetris class
+        self.height = height  # Initialize the height of the game field
+        self.width = width  # Initialize the width of the game field
+        self.field = []  # Initialize the game field
+        self.score = 0  # Initialize the score
+        self.state = "start"  # Initialize the state of the game
+        for i in range(height):  # Create an empty game field with the given dimensions
+            new_line = []
+            for j in range(width):
+                new_line.append(0)
+            self.field.append(new_line)
+
+    def new_figure(self):  # Method that creates a new figure
+        self.figure = Figure(3, 0)  # Create a new Figure instance at position (3, 0)
+
+    def intersects(self):  # Method that checks if the current position of the figure causes a collision
+        intersection = False  # Initialize the intersection flag as False
+        for i in range(4):  # Check each block of the figure
+            for j in range(4):
+                if i * 4 + j in self.figure.image():  # If the block is part of the figure
+                    if i + self.figure.y > self.height - 1 or \  # If the block is outside the game field
+                            j + self.figure.x > self.width - 1 or \
+                            j + self.figure.x < 0 or \
+                            self.field[i + self.figure.y][j + self.figure.x] > 0:
+                        intersection = True  # Set the intersection flag to True
+        return intersection  # Return the intersection flag
+
+        def break_lines(self):  # Method that removes completed lines and updates the score
+        lines = 0  # Initialize the number of completed lines
+        for i in range(1, self.height):  # Check each line of the game field
+            zeros = 0  # Initialize the number of empty blocks in the line
+            for j in range(self.width):
+                if self.field[i][j] == 0:  # If the block is empty
+                    zeros += 1  # Increment the number of empty blocks
+            if zeros == 0:  # If there are no empty blocks in the line
+                lines += 1  # Increment the number of completed lines
+                for i1 in range(i, 1, -1):  # Shift all lines above the completed line down one position
+                    for j in range(self.width):
+                        self.field[i1][j] = self.field[i1 - 1][j]
+        self.score += lines ** 2  # Update the score
+
+    def go_space(self):  # Method that moves the figure down until it can't go anymore
+        while not self.intersects():  # While the figure doesn't intersect with another block or the bottom of the game field
+            self.figure.y += 1  # Move the figure down one position
+        self.figure.y -= 1  # Undo the last movement
+        self.freeze()  # Freeze the figure in place
+
+    def go_down(self):  # Method that moves the figure down one position
+        self.figure.y += 1  # Move the figure down one position
+        if self.intersects():  # If the figure intersects with another block or the bottom of the game field
+            self.figure.y -= 1  # Undo the movement
+            self.freeze()  # Freeze the figure in place
+
+    def rotate(self):  # Method that rotates the figure
+        self.figure.rotate()  # Rotate the figure
+        if self.intersects():  # If the figure intersects with another block or the bottom of the game field
+            self.figure.rotate()  # Undo the rotation
+            self.figure.rotate()  # Rotate the figure in the opposite direction
+
+    def freeze(self):  # Method that adds the figure blocks to the game field and creates a new figure
+        for i in range(4):  # Add the figure blocks to the game field
+            for j in range(4):
+                if i * 4 + j in self.figure.image():
+                    self.field[i + self.figure.y][j + self.figure.x] = self.figure.color
+        self.new_figure()  # Create a new figure
+        if self.intersects():  # If the new figure intersects with another block or the bottom of the game field
+            self.state = "game over"  # Set the state of the game to "game over"
+
+    def go_side(self, dx): #This line defines the start of the go_side function, which is a member function of the Tetris class. The self parameter refers to the current object instance of the Tetris class, and the dx parameter specifies the horizontal direction and distance to move the Tetris piece.
+        old_x = self.figure.x #These lines store the current horizontal position of the Tetris piece in a variable called old_x, and then update the position by adding the value of dx.
+        self.figure.x += dx
+        if self.intersects(): #This line checks if the updated position of the Tetris piece intersects with any other pieces on the game field by calling the intersects function. If it returns True, the position is set back to the original position stored in old_x.
+            self.figure.x = old_x
+
+    def rotate(self): #This line defines the start of the rotate function, which is a member function of the Tetris class. The self parameter refers to the current object instance of the Tetris class.
+        old_rotation = self.figure.rotation #These lines store the current rotation of the Tetris piece in a variable called old_rotation, and then update the rotation by calling the rotate function of the figure attribute. This function rotates the Tetris piece 90 degrees clockwise.
+        self.figure.rotate()
+        if self.intersects(): #This line checks if the updated rotation of the Tetris piece intersects with any other pieces on the game field by calling the intersects function. If it returns True, the rotation is set back to the original rotation stored in old_rotation.
+            self.figure.rotation = old_rotation
+
+
+# Initialize the game engine
+pygame.init()
+
+# Define some colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+GRAY = (128, 128, 128)
+
+size = (400, 500) #These lines create a Pygame window with a size of 400x500 pixels and assign it to the screen variable.
+screen = pygame.display.set_mode(size)
+
+pygame.display.set_caption("Tetris") #sets the title of the Pygame window to "Tetris".
+
+# Loop until the user clicks the close button.
+#This line initializes the done flag, which is used to determine when to exit the main game loop. The loop will continue until the done flag is set to True.
+done = False
+clock = pygame.time.Clock() #These lines create a Pygame clock object and set the frame rate to 20 frames per second (fps). The clock object is used to control the frame rate of the game loop.
+fps = 20
+game = Tetris(20, 10) #This line creates a new Tetris object with a game field of 20 rows and 10 columns, and assigns it to the game variable.
+counter = 0
+
+pressing_down = False #This line initializes a flag called pressing_down to False. This flag is used to track if the down arrow key is being held down.
+
+while not done: #This line starts the main game loop, which will continue until the done flag is set to True.
+    if game.figure is None: #This line checks if the current Tetris piece is None, which means that there is no active piece on the game field. If this is the case, a new Tetris piece is created by calling the new_figure function.
+        game.new_figure()
+    counter += 1 #These lines increment the counter variable and reset it to 0 if it becomes greater than 100000. This is done to prevent the counter from growing too large.
+    if counter > 100000:
+        counter = 0
+
+#This line uses the modulo operator (%) to check if the counter variable is divisible by a certain value. The value is calculated by dividing the frame rate (fps) by the current level of the game (game.level) and dividing it again by 2. This check is performed every certain number of iterations, which depends on the current level of the game. If the counter variable is divisible by this value or if the pressing_down flag is True, the code inside the if block is executed.
+    if counter % (fps // game.level // 2) == 0 or pressing_down:
+        if game.state == "start": #This line checks if the current game state is "start". If this is the case, the go_down function is called to move the current Tetris piece down by one grid cell.
+            game.go_down()
+
+    for event in pygame.event.get(): #This line starts a loop that iterates over all events in the Pygame event queue. An event can be a user input (e.g. keyboard press, mouse click), a window close request, or other types of events.
+        if event.type == pygame.QUIT: #This line checks if the event is a window close request. If it is, the done flag is set to True to exit the main game loop.
+            done = True
+        if event.type == pygame.KEYDOWN: #This line checks if the event is a keyboard press. If it is, the code inside the if block is executed.
+#These lines check which key was pressed and call the appropriate function of the game object. The K_UP, K_DOWN, K_LEFT, K_RIGHT, K_SPACE, and K_ESCAPE constants are predefined in the Pygame library and represent the up arrow, down arrow, left arrow, right arrow, space bar, and escape keys, respectively.            
+            if event.key == pygame.K_UP: 
+                game.rotate()
+            if event.key == pygame.K_DOWN:
+                pressing_down = True
+            if event.key == pygame.K_LEFT:
+                game.go_side(-1)
+            if event.key == pygame.K_RIGHT:
+                game.go_side(1)
+            if event.key == pygame.K_SPACE:
+                game.go_space()
+            if event.key == pygame.K_ESCAPE:
+                game.__init__(20, 10)
+
+    if event.type == pygame.KEYUP: #This line checks if the event is a keyboard release. If it is, the code inside the if block is executed.
+            if event.key == pygame.K_DOWN:  #This line checks if the down arrow key was released and sets the pressing_down flag to False if it was.
+                pressing_down = False
+
+    screen.fill(WHITE) #This line fills the Pygame window with the color white.
+
+    for i in range(game.height): #This line draws a rectangle on the Pygame window using the `pygame.draw.rect` function. The rectangle represents a cell in the game field and is drawn with a width and height of `game.zoom` pixels and a border thickness of 1 pixel. The position of the rectangle is calculated by adding the `game.x` and `game.y` values to the current row and column indices (`i` and `j`) and multiplying them by the zoom factor (`game.zoom`). The color of the rectangle is set to `GRAY`.
+        for j in range(game.width):
+            pygame.draw.rect(screen, GRAY, [game.x + game.zoom * j, game.y + game.zoom * i, game.zoom, game.zoom], 1)
+            if game.field[i][j] > 0: #This line checks if the cell at the current position (`i`, `j`) in the game field is occupied by a Tetris piece. If it is, another rectangle is drawn on top of the previous one with the color of the Tetris piece taken from the `colors` list. The position and size of the rectangle are slightly different to create a gap between the cells.
+                pygame.draw.rect(screen, colors[game.field[i][j]],
+                                 [game.x + game.zoom * j + 1, game.y + game.zoom * i + 1, game.zoom - 2, game.zoom - 1])
+
+    if game.figure is not None: #This block of code is similar to the previous one, but it is used to draw the current Tetris piece on the game field. It iterates over all positions in a 4x4 grid and checks if the current position is part of the Tetris piece by calling the `image` function of the `figure` attribute. If it is, a rectangle is drawn with the color of the Tetris piece. The position of the rectangle is calculated by adding the `game.x` and `game.y` values to the current row and column indices (`i` and `j`) and the horizontal and vertical position of the Tetris piece (`game.figure.x` and `game.figure.y`), and multiplying them by the zoom factor (`game.zoom`).
+        for i in range(4):
+            for j in range(4):
+                p = i * 4 + j
+                if p in game.figure.image():
+                    pygame.draw.rect(screen, colors[game.figure.color],
+                                     [game.x + game.zoom * (j + game.figure.x) + 1,
+                                      game.y + game.zoom * (i + game.figure.y) + 1,
+                                      game.zoom - 2, game.zoom - 2])
+
+#This block of code is similar to the previous one, but it includes additional lines to display instructions and a "game over" message on the Pygame window.
+    font = pygame.font.SysFont('Calibri', 25, True, False) #This line creates a Pygame font object with the Calibri font, a size of 25 pixels, and a bold and italic style.
+    font1 = pygame.font.SysFont('Calibri', 65, True, False)
+    font2 = pygame.font.SysFont('Calibri', 15, True, False)
+    text = font.render("Score: " + str(game.score), True, BLACK) #This line creates a Pygame surface with text that displays the current score and assigns it to the text variable. The text is rendered with the Calibri font, a size of 25 pixels, a color of black, and the current score is converted to a string using the str function.
+    text_game_over = font1.render("Game Over", True, (255, 125, 0)) #This line creates a Pygame surface with the text "Game Over" and assigns it to the text_game_over variable. The text is rendered with the Calibri font, a size of 65 pixels, and a color of orange.
+    text_game_over1 = font1.render("Press ESC", True, (255, 215, 0)) #This line creates a Pygame surface with the text "Press ESC" and assigns it to the text_game_over1 variable. The text is rendered with the Calibri font, a size of 65 pixels, and a color of yellow.
+    
+    Instructions=font2.render("Instructions", True, BLACK) #This line creates a Pygame surface with the text "Instructions" and assigns it to the Instructions variable. The text is rendered with the Calibri font, a size of 15 pixels, and a color of black.
+    instructionline1=font2.render("1.left and right arrow keys for movement",True,BLACK) #This line creates a Pygame surface with the text "1.left and right arrow keys for movement" and assigns it to the instructionline1 variable. The text is rendered with the Calibri font, a size of 15 pixels, and a color of black.
+    instructionline2=font2.render("2.up arrow for rotations",True,BLACK)
+    instructionline3=font2.render("3.down or space key to speed up fall",True,BLACK)
+    instructionline4=font2.render("4.esc to reset board",True,BLACK)
+   
+    
+    screen.blit(text, [0, 0]) #This line draws the text surface on the Pygame window at the position (0, 0).
+    screen.blit(Instructions, [0, 20]) #This line draws the Instructions surface on the Pygame window at the position (0, 20).
+    screen.blit(instructionline1, [0, 35]) #This line draws the instructionline1 surface on the Pygame window at the position (0, 35).
+    screen.blit(instructionline2, [0, 50]) #This line draws the instructionline2 surface on the Pygame window at the position (0, 50).
+    screen.blit(instructionline3, [0, 65]) #This line draws the instructionline3 surface on the Pygame window at the position (0, 65).
+    screen.blit(instructionline4, [0, 80]) #This line draws the instructionline4 surface on the Pygame window at the position (0, 80).
+
+
+    if game.state == "gameover": #This block of code checks if the game state is "gameover" and, if it is, it draws the text_game_over and text_game_over1 surfaces on the Pygame window at the positions (20, 200) and (25, 265), respectively.
+        screen.blit(text_game_over, [20, 200])
+        screen.blit(text_game_over1, [25, 265])
+
+    pygame.display.flip() #This line updates the Pygame window to reflect any changes made during the current iteration of the game loop.
+    clock.tick(fps) #This line tells the Pygame clock to pause the game loop for the amount of time required to maintain a frame rate of 20 fps.
+
+pygame.quit() #This line cleans up Pygame and closes the window.        
+            
+            
+            
+            
+            
+            
+            
