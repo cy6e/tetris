@@ -1,8 +1,0 @@
-# Function to draw the grid on the screen
-def draw_grid():
-    for x in range(grid_width):
-        for y in range(grid_height):
-            color = WHITE
-            if (x + y) % 2 == 0:
-                color = BLACK
-            pygame.draw.rect(screen, color, pygame.Rect(x * block_size, y * block_size, block_size, block_size), 1)

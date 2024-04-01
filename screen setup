@@ -1,8 +1,0 @@
-# Create a new screen
-screen = pygame.display.set_mode([screen_width, screen_height])
- 
-# Set the title of the screen
-pygame.display.set_caption("Tetris")
- 
-# Set the default font
-font = pygame.font.Font(None, 36)
