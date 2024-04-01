@@ -2,7 +2,7 @@
 
 This is an implementation of the classic Tetris game using Python and Pygame library.
 
-![Tetris Gameplay](tetris_gameplay.gif)
+![Tetris Gameplay](tetris.gif)
 
 ## Features
 
