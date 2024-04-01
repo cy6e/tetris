@@ -47,7 +47,7 @@ class Tetris:
     field = []
     height = 0
     width = 0
-    x = 100
+    x = 175
     y = 60
     zoom = 20
     figure = None
@@ -183,7 +183,7 @@ while not done:
             if event.key == pygame.K_DOWN:
                 pressing_down = False
 
-    screen.fill(WHITE)
+    screen.fill(BLACK)
 
     for i in range(game.height):
         for j in range(game.width):
@@ -205,22 +205,22 @@ while not done:
     font = pygame.font.SysFont('Calibri', 25, True, False)
     font1 = pygame.font.SysFont('Calibri', 65, True, False)
     font3 = pygame.font.SysFont('Calibri', 15, True, False)
-    text = font.render("Score: " + str(game.score), True, BLACK)
-    text1 = font3.render("<- move left", True, BLACK)
-    text2= font3.render("-> move right", True, BLACK)
-    text3 = font3.render("down arrow move down", True, BLACK)
-    text4 = font3.render("up arrow rotate block", True, BLACK)
+    text = font.render("Score: " + str(game.score), True, WHITE)
+    text1 = font3.render("<- move left", True, WHITE)
+    text2= font3.render("-> move right", True, WHITE)
+    text3 = font3.render("down arrow move down", True, WHITE)
+    text4 = font3.render("up arrow rotate block", True, WHITE)
     text_game_over = font1.render("Game Over", True, (255, 125, 0))
     text_game_over1 = font1.render("Press ESC", True, (255, 215, 0))
 
     screen.blit(text, [0, 0])
-    screen.blit(text1, [0,25])
+    screen.blit(text1, [0,30])
     screen.blit(text2, [0,50])
-    screen.blit(text3, [0,75])
-    screen.blit(text4, [0,100])
+    screen.blit(text3, [0,70])
+    screen.blit(text4, [0,90])
     if game.state == "gameover":
-        screen.blit(text_game_over, [20, 200])
-        screen.blit(text_game_over1, [25, 265])
+        screen.blit(text_game_over, [50, 200])
+        screen.blit(text_game_over1, [70, 265])
 
     pygame.display.flip()
     clock.tick(fps)
